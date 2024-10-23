@@ -2,9 +2,9 @@ name: Package Python Application for Test and Prod
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "master" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "master" ]
 
 permissions:
   contents: read
@@ -31,18 +31,20 @@ jobs:
         pip install -r requirements.txt
         pip install pyinstaller
 
-    - name: Set environment variables
+    - name: Set environment variables for test or prod
       run: |
+        if [ "${{ matrix.env }}" == "test" ]; then
+          echo "EGYPT_URL=${{ secrets.EGYPT_URL_TEST }}" >> $GITHUB_ENV
+          echo "DUBAI_URL=${{ secrets.DUBAI_URL_TEST }}" >> $GITHUB_ENV
+        elif [ "${{ matrix.env }}" == "prod" ]; then
+          echo "EGYPT_URL=${{ secrets.EGYPT_URL_PROD }}" >> $GITHUB_ENV
+          echo "DUBAI_URL=${{ secrets.DUBAI_URL_PROD }}" >> $GITHUB_ENV
+        fi
         echo "APP_ENV=${{ matrix.env }}" >> $GITHUB_ENV
-        echo "EGYPT_URL=${{ secrets.EGYPT_URL_${{ matrix.env | upper }} }}" >> $GITHUB_ENV
-        echo "DUBAI_URL=${{ secrets.DUBAI_URL_${{ matrix.env | upper }} }}" >> $GITHUB_ENV
 
     - name: Package the application
       run: |
         pyinstaller --onefile --windowed app.py
-      env:
-        EGYPT_URL: ${{ secrets.EGYPT_URL_${{ matrix.env | upper }} }}
-        DUBAI_URL: ${{ secrets.DUBAI_URL_${{ matrix.env | upper }} }}
 
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
