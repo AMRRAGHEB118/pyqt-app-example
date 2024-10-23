@@ -1,0 +1,51 @@
+name: Package Python Application for Test and Prod
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        env: [test, prod]  # Build for both test and prod environments
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.x
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.x"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+
+    - name: Set environment variables
+      run: |
+        echo "APP_ENV=${{ matrix.env }}" >> $GITHUB_ENV
+        echo "EGYPT_URL=${{ secrets.EGYPT_URL_${{ matrix.env | upper }} }}" >> $GITHUB_ENV
+        echo "DUBAI_URL=${{ secrets.DUBAI_URL_${{ matrix.env | upper }} }}" >> $GITHUB_ENV
+
+    - name: Package the application
+      run: |
+        pyinstaller --onefile --windowed app.py
+      env:
+        EGYPT_URL: ${{ secrets.EGYPT_URL_${{ matrix.env | upper }} }}
+        DUBAI_URL: ${{ secrets.DUBAI_URL_${{ matrix.env | upper }} }}
+
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-${{ matrix.env }}
+        path: dist/app
