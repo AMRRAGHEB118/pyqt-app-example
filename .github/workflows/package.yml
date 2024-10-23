@@ -31,6 +31,7 @@ jobs:
         pip install pyinstaller
 
     - name: Set environment variables for test or prod
+      shell: bash
       run: |
         if [ "${{ matrix.env }}" == "test" ]; then
           echo "EGYPT_URL=${{ secrets.EGYPT_URL_TEST }}" >> $GITHUB_ENV
@@ -43,7 +44,7 @@ jobs:
 
     - name: Package the application
       run: |
-        pyinstaller --onefile --windowed app.py
+        pyinstaller --onefile --windowed --name app-${{ matrix.env }} app.py
 
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
